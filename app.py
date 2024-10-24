@@ -11,10 +11,16 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 st.title("Palo Alto to Fortinet Terraform Converter")
 
-st.header("Palo Alto Firewall Credentials")
-pan_url = st.text_input("Palo Alto Firewall URL", "https://<firewall-ip>")
-username = st.text_input("Username")
-password = st.text_input("Password", type="password")
+# Add option to select configuration source
+option = st.radio("Select Configuration Source", ('Upload Config File', 'Log into Device'))
+
+if option == 'Upload Config File':
+    uploaded_file = st.file_uploader("Choose a Palo Alto Configuration XML file", type=['xml'])
+else:
+    st.header("Palo Alto Firewall Credentials")
+    pan_url = st.text_input("Palo Alto Firewall URL", "https://<firewall-ip>")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
 def get_api_key(pan_url, username, password):
     params = {
@@ -100,40 +106,77 @@ def render_templates(ftnt_addresses, ftnt_services):
     return output_files
 
 if st.button("Convert Configuration"):
-    st.info("Retrieving API key...")
-    api_key = get_api_key(pan_url, username, password)
-    if api_key:
-        st.success("API key retrieved successfully.")
-        st.info("Downloading configuration...")
-        config_content = download_config(pan_url, api_key)
-        if config_content:
-            st.success("Configuration downloaded successfully.")
-            st.info("Parsing configuration...")
-            pa_config = xmltodict.parse(config_content)
-            st.success("Configuration parsed successfully.")
+    if option == 'Upload Config File':
+        if uploaded_file is not None:
+            st.info("Parsing uploaded configuration...")
+            try:
+                config_content = uploaded_file.read()
+                pa_config = xmltodict.parse(config_content)
+                st.success("Configuration parsed successfully.")
 
-            # Mapping configurations
-            st.info("Mapping configurations...")
-            ftnt_addresses = map_address_objects(pa_config)
-            ftnt_services = map_service_objects(pa_config)
-            st.success("Configurations mapped successfully.")
+                # Mapping configurations
+                st.info("Mapping configurations...")
+                ftnt_addresses = map_address_objects(pa_config)
+                ftnt_services = map_service_objects(pa_config)
+                st.success("Configurations mapped successfully.")
 
-            # Generating Terraform files
-            st.info("Generating Terraform files...")
-            output_files = render_templates(ftnt_addresses, ftnt_services)
-            st.success(f"Generated {len(output_files)} Terraform files.")
+                # Generating Terraform files
+                st.info("Generating Terraform files...")
+                output_files = render_templates(ftnt_addresses, ftnt_services)
+                st.success(f"Generated {len(output_files)} Terraform files.")
 
-            # Provide download link
-            st.info("Preparing Terraform files for download...")
-            shutil.make_archive('terraform_configs', 'zip', 'output')
+                # Provide download link
+                st.info("Preparing Terraform files for download...")
+                shutil.make_archive('terraform_configs', 'zip', 'output')
 
-            with open('terraform_configs.zip', 'rb') as f:
-                st.download_button('Download Terraform Configurations', f, file_name='terraform_configs.zip')
+                with open('terraform_configs.zip', 'rb') as f:
+                    st.download_button('Download Terraform Configurations', f, file_name='terraform_configs.zip')
 
-            # Clean up
-            shutil.rmtree('output')
-            os.remove('terraform_configs.zip')
+                # Clean up
+                shutil.rmtree('output')
+                os.remove('terraform_configs.zip')
+            except Exception as e:
+                st.error(f"An error occurred while processing the configuration: {e}")
         else:
-            st.error("Failed to download configuration.")
+            st.error("Please upload a configuration file.")
     else:
-        st.error("Failed to retrieve API key. Check your credentials.")
+        st.info("Retrieving API key...")
+        api_key = get_api_key(pan_url, username, password)
+        if api_key:
+            st.success("API key retrieved successfully.")
+            st.info("Downloading configuration...")
+            config_content = download_config(pan_url, api_key)
+            if config_content:
+                st.success("Configuration downloaded successfully.")
+                st.info("Parsing configuration...")
+                try:
+                    pa_config = xmltodict.parse(config_content)
+                    st.success("Configuration parsed successfully.")
+
+                    # Mapping configurations
+                    st.info("Mapping configurations...")
+                    ftnt_addresses = map_address_objects(pa_config)
+                    ftnt_services = map_service_objects(pa_config)
+                    st.success("Configurations mapped successfully.")
+
+                    # Generating Terraform files
+                    st.info("Generating Terraform files...")
+                    output_files = render_templates(ftnt_addresses, ftnt_services)
+                    st.success(f"Generated {len(output_files)} Terraform files.")
+
+                    # Provide download link
+                    st.info("Preparing Terraform files for download...")
+                    shutil.make_archive('terraform_configs', 'zip', 'output')
+
+                    with open('terraform_configs.zip', 'rb') as f:
+                        st.download_button('Download Terraform Configurations', f, file_name='terraform_configs.zip')
+
+                    # Clean up
+                    shutil.rmtree('output')
+                    os.remove('terraform_configs.zip')
+                except Exception as e:
+                    st.error(f"An error occurred while parsing the configuration: {e}")
+            else:
+                st.error("Failed to download configuration.")
+        else:
+            st.error("Failed to retrieve API key. Check your credentials.")

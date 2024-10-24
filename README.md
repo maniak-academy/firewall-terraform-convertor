@@ -11,6 +11,6 @@ pip install -v -r requirements.txt
 pip install --force-reinstall -v -r requirements.txt
 
 
-.venv\Scripts\Activate.ps1
+.venv\Scripts\Activate.bat
 
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
