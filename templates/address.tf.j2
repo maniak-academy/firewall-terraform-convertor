@@ -1,0 +1,10 @@
+# templates/address.tf.j2
+
+resource "fortios_firewall_address" "{{ name }}" {
+  name = "{{ name }}"
+  {% if type == 'subnet' %}
+  subnet = "{{ value }}"
+  {% else %}
+  fqdn = "{{ value }}"
+  {% endif %}
+}

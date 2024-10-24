@@ -1,0 +1,5 @@
+streamlit
+requests
+xmltodict
+jinja2
+urllib3

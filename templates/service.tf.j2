@@ -1,0 +1,9 @@
+# templates/service.tf.j2
+
+resource "fortios_firewall_service_custom" "{{ name }}" {
+  name = "{{ name }}"
+  protocol = "{{ protocol_type }}"
+  {{ protocol_type }} {
+    port_range = "{{ port }}"
+  }
+}
