@@ -10,7 +10,13 @@ import traceback
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-st.title("Palo Alto to Fortinet Terraform Converter")
+# Update the title and add a subtitle
+st.title("AI Platform Firewall Generator")
+st.subheader("Palo Alto Firewall to Terraform FortiOS Converter")
+
+# Display the image under the subtitle
+image_path = os.path.join('images', 'image.png')
+st.image(image_path)
 
 # Add option to select configuration source
 option = st.radio("Select Configuration Source", ('Upload Config File', 'Log into Device'))
@@ -199,9 +205,11 @@ def map_nat_rules(pa_config):
                 ftnt_nat_rules.append(ftnt_rule)
     return ftnt_nat_rules
 
+# Updated render_templates function
 def render_templates(ftnt_addresses, ftnt_address_groups, ftnt_services, ftnt_security_rules, ftnt_nat_rules):
     env = Environment(loader=FileSystemLoader('templates'))
     output_files = []
+    output_contents = []
 
     # Ensure output directory exists
     os.makedirs('output', exist_ok=True)
@@ -210,48 +218,58 @@ def render_templates(ftnt_addresses, ftnt_address_groups, ftnt_services, ftnt_se
     address_template = env.get_template('address.tf.j2')
     for address in ftnt_addresses:
         output = address_template.render(address=address)
-        file_path = f"output/{address['name']}_address.tf"
+        file_name = f"{address['name']}_address.tf"
+        file_path = f"output/{file_name}"
         with open(file_path, 'w') as f:
             f.write(output)
         output_files.append(file_path)
+        output_contents.append({'file_name': file_name, 'content': output})
 
     # Render address groups
     address_group_template = env.get_template('address_group.tf.j2')
     for group in ftnt_address_groups:
         output = address_group_template.render(group=group)
-        file_path = f"output/{group['name']}_address_group.tf"
+        file_name = f"{group['name']}_address_group.tf"
+        file_path = f"output/{file_name}"
         with open(file_path, 'w') as f:
             f.write(output)
         output_files.append(file_path)
+        output_contents.append({'file_name': file_name, 'content': output})
 
     # Render service objects
     service_template = env.get_template('service.tf.j2')
     for service in ftnt_services:
         output = service_template.render(service=service)
-        file_path = f"output/{service['name']}_service.tf"
+        file_name = f"{service['name']}_service.tf"
+        file_path = f"output/{file_name}"
         with open(file_path, 'w') as f:
             f.write(output)
         output_files.append(file_path)
+        output_contents.append({'file_name': file_name, 'content': output})
 
     # Render security policies
     policy_template = env.get_template('policy.tf.j2')
     for policy in ftnt_security_rules:
         output = policy_template.render(policy=policy)
-        file_path = f"output/{policy['name']}_policy.tf"
+        file_name = f"{policy['name']}_policy.tf"
+        file_path = f"output/{file_name}"
         with open(file_path, 'w') as f:
             f.write(output)
         output_files.append(file_path)
+        output_contents.append({'file_name': file_name, 'content': output})
 
     # Render NAT rules
     nat_template = env.get_template('nat.tf.j2')
     for nat_rule in ftnt_nat_rules:
         output = nat_template.render(nat_rule=nat_rule)
-        file_path = f"output/{nat_rule['name']}_nat.tf"
+        file_name = f"{nat_rule['name']}_nat.tf"
+        file_path = f"output/{file_name}"
         with open(file_path, 'w') as f:
             f.write(output)
         output_files.append(file_path)
+        output_contents.append({'file_name': file_name, 'content': output})
 
-    return output_files
+    return output_files, output_contents
 
 if st.button("Convert Configuration"):
     try:
@@ -260,9 +278,6 @@ if st.button("Convert Configuration"):
                 st.info("Parsing uploaded configuration...")
                 config_content = uploaded_file.read()
                 pa_config = xmltodict.parse(config_content)
-
-                # Optional: Uncomment to inspect the structure
-                # st.write(pa_config)
 
                 # Mapping configurations
                 st.info("Mapping configurations...")
@@ -275,8 +290,20 @@ if st.button("Convert Configuration"):
 
                 # Generating Terraform files
                 st.info("Generating Terraform files...")
-                output_files = render_templates(ftnt_addresses, ftnt_address_groups, ftnt_services, ftnt_security_rules, ftnt_nat_rules)
+                output_files, output_contents = render_templates(
+                    ftnt_addresses,
+                    ftnt_address_groups,
+                    ftnt_services,
+                    ftnt_security_rules,
+                    ftnt_nat_rules
+                )
                 st.success(f"Generated {len(output_files)} Terraform files.")
+
+                # Display the Terraform outputs
+                st.info("Displaying Terraform outputs...")
+                for item in output_contents:
+                    st.markdown(f"### {item['file_name']}")
+                    st.code(item['content'], language='terraform')
 
                 # Provide download link
                 st.info("Preparing Terraform files for download...")
@@ -302,9 +329,6 @@ if st.button("Convert Configuration"):
                     st.info("Parsing configuration...")
                     pa_config = xmltodict.parse(config_content)
 
-                    # Optional: Uncomment to inspect the structure
-                    # st.write(pa_config)
-
                     # Mapping configurations
                     st.info("Mapping configurations...")
                     ftnt_addresses = map_address_objects(pa_config)
@@ -316,8 +340,20 @@ if st.button("Convert Configuration"):
 
                     # Generating Terraform files
                     st.info("Generating Terraform files...")
-                    output_files = render_templates(ftnt_addresses, ftnt_address_groups, ftnt_services, ftnt_security_rules, ftnt_nat_rules)
+                    output_files, output_contents = render_templates(
+                        ftnt_addresses,
+                        ftnt_address_groups,
+                        ftnt_services,
+                        ftnt_security_rules,
+                        ftnt_nat_rules
+                    )
                     st.success(f"Generated {len(output_files)} Terraform files.")
+
+                    # Display the Terraform outputs
+                    st.info("Displaying Terraform outputs...")
+                    for item in output_contents:
+                        st.markdown(f"### {item['file_name']}")
+                        st.code(item['content'], language='terraform')
 
                     # Provide download link
                     st.info("Preparing Terraform files for download...")
