@@ -1,10 +1,9 @@
-# templates/address.tf.j2
-
-resource "fortios_firewall_address" "{{ name }}" {
-  name = "{{ name }}"
-  {% if type == 'subnet' %}
-  subnet = "{{ value }}"
-  {% else %}
-  fqdn = "{{ value }}"
+resource "fortios_firewall_address" "{{ address.name | replace('-', '_') }}" {
+  name    = "{{ address.name }}"
+  {% if address.type == 'subnet' %}
+  subnet  = "{{ address.value }}"
+  {% elif address.type == 'fqdn' %}
+  fqdn    = "{{ address.value }}"
   {% endif %}
+  comment = "{{ address.description }}"
 }

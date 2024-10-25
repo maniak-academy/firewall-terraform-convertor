@@ -3,14 +3,15 @@
 Setup streamlit env
 pip install streamlit
 
-python -m venv .venv
-
-pip install -vvv -r requirements.txt
-
-pip install -v -r requirements.txt
-pip install --force-reinstall -v -r requirements.txt
+python3 -m venv .venv
 
 
-.venv\Scripts\Activate.bat
+pip3 install -vvv -r requirements.txt
+
+pip3 install -v -r requirements.txt
+pip3 install --force-reinstall -v -r requirements.txt
+
+
+.venv\Scripts\Activate.ps1
 
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser

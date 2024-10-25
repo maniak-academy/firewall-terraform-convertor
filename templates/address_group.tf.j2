@@ -1,0 +1,5 @@
+resource "fortios_firewall_addrgrp" "{{ group.name | replace('-', '_') }}" {
+  name    = "{{ group.name }}"
+  member  = [{% for member in group.members %}"{{ member }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  comment = "{{ group.description }}"
+}

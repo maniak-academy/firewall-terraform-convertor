@@ -1,0 +1,49 @@
+{% if nat_rule.source_translation %}
+# Source NAT Rule: {{ nat_rule.name }}
+resource "fortios_firewall_policy" "{{ nat_rule.name | replace('-', '_') }}_snat_policy" {
+  name        = "{{ nat_rule.name }}"
+  srcintf     = [{% for zone in nat_rule.source_zones %}"{{ zone }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  dstintf     = [{% for zone in nat_rule.destination_zones %}"{{ zone }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  srcaddr     = [{% for addr in nat_rule.source_addresses %}"{{ addr }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  dstaddr     = [{% for addr in nat_rule.destination_addresses %}"{{ addr }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  action      = "accept"
+  schedule    = "always"
+  service     = ["{{ nat_rule.service }}"]
+  nat         = "enable"
+  comments    = "{{ nat_rule.description }}"
+
+  ippool = "enable"
+  poolname = ["{{ nat_rule.source_translation['dynamic-ip-and-port']['interface-address']['ip'] }}"]
+}
+
+# IP Pool for SNAT
+resource "fortios_firewall_ippool" "{{ nat_rule.name | replace('-', '_') }}_ippool" {
+  name    = "{{ nat_rule.source_translation['dynamic-ip-and-port']['interface-address']['ip'] }}"
+  startip = "{{ nat_rule.source_translation['dynamic-ip-and-port']['interface-address']['ip'] }}"
+  endip   = "{{ nat_rule.source_translation['dynamic-ip-and-port']['interface-address']['ip'] }}"
+  type    = "overload"
+}
+{% elif nat_rule.destination_translation %}
+# Destination NAT Rule: {{ nat_rule.name }}
+resource "fortios_firewall_vip" "{{ nat_rule.name | replace('-', '_') }}" {
+  name        = "{{ nat_rule.name }}"
+  extintf     = "{{ nat_rule.destination_zones[0] }}"
+  extip       = "{{ nat_rule.destination_addresses[0] }}"
+  mappedip    = "{{ nat_rule.destination_translation['translated-address'] }}"
+  portforward = false
+  comment     = "{{ nat_rule.description }}"
+}
+
+# Policy to allow traffic to the VIP
+resource "fortios_firewall_policy" "{{ nat_rule.name | replace('-', '_') }}_policy" {
+  name        = "{{ nat_rule.name }}_Policy"
+  srcintf     = [{% for zone in nat_rule.source_zones %}"{{ zone }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  dstintf     = [{% for zone in nat_rule.destination_zones %}"{{ zone }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  srcaddr     = [{% for addr in nat_rule.source_addresses %}"{{ addr }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  dstaddr     = ["{{ nat_rule.name }}"]
+  action      = "accept"
+  schedule    = "always"
+  service     = ["{{ nat_rule.service }}"]
+  comments    = "{{ nat_rule.description }}"
+}
+{% endif %}

@@ -1,9 +1,9 @@
-# templates/service.tf.j2
-
-resource "fortios_firewall_service_custom" "{{ name }}" {
-  name = "{{ name }}"
-  protocol = "{{ protocol_type }}"
-  {{ protocol_type }} {
-    port_range = "{{ port }}"
-  }
+resource "fortios_firewall_service_custom" "{{ service.name | replace('-', '_') }}" {
+  name          = "{{ service.name }}"
+  protocol      = "{{ service.protocol_type }}"
+  {% if service.protocol_type == 'tcp' %}
+  tcp_portrange = "{{ service.port }}"
+  {% elif service.protocol_type == 'udp' %}
+  udp_portrange = "{{ service.port }}"
+  {% endif %}
 }

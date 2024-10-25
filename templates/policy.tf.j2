@@ -1,0 +1,11 @@
+resource "fortios_firewall_policy" "{{ policy.name | replace('-', '_') }}" {
+  name        = "{{ policy.name }}"
+  srcintf     = [{% for zone in policy.source_zones %}"{{ zone }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  dstintf     = [{% for zone in policy.destination_zones %}"{{ zone }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  srcaddr     = [{% for addr in policy.source_addresses %}"{{ addr }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  dstaddr     = [{% for addr in policy.destination_addresses %}"{{ addr }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  action      = "{{ 'accept' if policy.action == 'allow' else 'deny' }}"
+  schedule    = "always"
+  service     = [{% for service in policy.services %}"{{ service }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  comments    = "{{ policy.description }}"
+}
